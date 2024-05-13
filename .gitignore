@@ -1,0 +1,7 @@
+venv
+.vscode
+.ipynb_checkpoints
+__pycache__
+*.json
+*.png
+test.py
