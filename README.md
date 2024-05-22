@@ -12,6 +12,8 @@ https://docs.google.com/document/d/14n6sv0xIABAubKRT8tzn6qswo3ZGAOl0L5TG1_G_sFM/
 - Запуск:
   - Демонстрация phomebook.py: `python main.py` 
   - Тестировать через блокнот `Untitled.ipynb`
+  - Тесты: `python -m unittest`
+
 
  
 

@@ -86,11 +86,6 @@ def is_columns(tested_data: list[str], correct_data: list[str]) -> list[str]:
         log.info(e)
         raise ValueError(e)
 
-    for i in tested_data:
-        if i in correct_data and i != "name":
-            return_data.append(i)
-        elif i != "name":
-            log.info(f"Поле {i} некорректно и НЕ будет обработано!")
     return_data = [i for i in correct_data if i in tested_data and i != "name"]
 
     if not return_data:
@@ -117,7 +112,7 @@ def draw_plots(
 
     file_name = ping_file(file_name)
 
-    if (first_index and last_index) and first_index > last_index:
+    if (first_index and last_index) and first_index >= last_index:
         e = f"Значение выборки данных первого индекса: {first_index} больше последнего: {last_index}"
         log.info(e)
         raise ValueError(e)
@@ -129,7 +124,7 @@ def draw_plots(
 
     columns = is_columns(tested_data=columns, correct_data=list(w_data.columns))
 
-    ret_data: pd.DataFrame = w_data.loc[first_index:last_index, columns]  # [columns]
+    ret_data: pd.DataFrame = w_data.loc[first_index:last_index, columns]
     p.plot(ret_data)
     p.savefig(file_name)
     return str(PLOTS_PATH)
