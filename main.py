@@ -1,22 +1,35 @@
 """
-gt_corners :  колличество углов
-rb_corners :  углов найдено
-mean :  среднее значение отклонений
-max :  максимальное отклонение
-min :  минимальное отклонение
-floor_mean :  среднее значение отклонений пола
-floor_max :  максимальное отклонение пола 
-floor_min : минимальное отклонение пола 
+Список команд:
+
+-h  --help    : помлощь в управлении
+-l  --lenght  : длинна обрабатываемого диапазона значений по типу 'начало:конец'
+-n  --name    : 'имя_файла.png' в который сохранится график
+-c  --columns : перечисление имен обрабатываемых столбцов по типу 'столбец1/столбец2/столбец3'
+
+Пример: '--help -l 100:200 -n test.png -c mean'
+
+Список столбцов:
+
+gt_corners   :  колличество углов
+rb_corners   :  углов найдено
+mean         :  среднее значение отклонений
+max          :  максимальное отклонение
+min          :  минимальное отклонение
+floor_mean   :  среднее значение отклонений пола
+floor_max    :  максимальное отклонение пола 
+floor_min    : минимальное отклонение пола 
 ceiling_mean :  среднее значение отклонений потолка
-ceiling_max :  максимальное отклонение потолка
-ceiling_min :  минимальное отклонение потолка
+ceiling_max  :  максимальное отклонение потолка
+ceiling_min  :  минимальное отклонение потолка
 """
 import os
+import sys
 import time
 import requests
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Callable
 from pathlib import Path
 from annotated_types import Ge, Gt, MinLen
+from copy import copy
 import logging
 import pandas as pd
 import matplotlib.pyplot as p
@@ -25,6 +38,46 @@ log: logging.Logger = logging.getLogger("pandas_script")
 URL = "https://ai-process-sandy.s3.eu-west-1.amazonaws.com/purge/deviation.json"
 TEMP_FILE_NAME = "temp.json"
 PLOTS_PATH: Path = Path(__file__).resolve().with_name("plots")
+
+
+def _docs(*args, **kwargs) -> None:
+    """Строка документации."""
+
+    print(__doc__)
+
+
+def _lenght(data: list[str], plots_kwargs: dict) -> None:
+    """Обработка переданной длинны диапазона."""
+
+    val = list(map(int, data.pop(0).split(":")))
+    if len(val) > 2:
+        print(f"{val[:2:]} лишние данные не будут использованы.")
+    plots_kwargs["first_index"], plots_kwargs["last_index"] = val[0], val[1]
+
+
+def _name(data: list[str], plots_kwargs: dict) -> None:
+    """Обработка переданного имени файла."""
+
+    plots_kwargs["file_name"] = data.pop(0)
+
+
+def _columns(data: list[str], plots_kwargs: dict) -> None:
+    """Создаём список столбцов для обработки."""
+
+    plots_kwargs["columns"] = data.pop(0).split("/")
+
+
+# Маленькое_приложение : простое_решение
+commands: dict[str, Callable] = {
+    "-h": _docs,
+    "--help": _docs,
+    "-l": _lenght,
+    "--lenght": _lenght,
+    "-n": _name,
+    "--name": _name,
+    "-c": _columns,
+    "--columns": _columns,
+}
 
 
 def ping_file(file_name: str) -> bool:
@@ -130,8 +183,28 @@ def draw_plots(
     return str(PLOTS_PATH)
 
 
-if __name__ == "__main__":
+def get_start():
+    """Обработка команд запуска из консоли."""
+
+    if len(sys.argv) == 1:
+        get_json_datafile(url=URL)
+        return draw_plots(
+            f"{time.time()}_test.png", last_index=200, columns=["min", "max", "mean"]
+        )
+    data: list[str] = copy(sys.argv)
+    plots_kwargs: dict = {}
+    print(f"{data.pop(0)} запуск создания графика.")
+    try:
+        while len(data) > 0:
+            commands[data.pop(0)](data, plots_kwargs)
+    except Exception as e:
+        print(f"Ошибка причина: {e} \n --help : список команд")
+        return
+    if len(plots_kwargs.keys()) == 0:
+        return
     get_json_datafile(url=URL)
-    draw_plots(
-        f"{time.time()}_test.png", last_index=200, columns=["min", "max", "mean"]
-    )
+    return draw_plots(**plots_kwargs)
+
+
+if __name__ == "__main__":
+    get_start()
